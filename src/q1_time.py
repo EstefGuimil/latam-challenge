@@ -26,23 +26,26 @@ def get_top_user_by_date(df):
 def q1_time(file_path: str) -> List[Tuple[datetime.date, str]]:
     # Creo un dataframe con todos los jsons
     df = aux_fun.read_json_file_pandas(file_path)
-    # Convierto en datetime la fecha del tweet
-    df['created_date'] = df['date'].str[:10]
-    # Genero un dataframe con la cantidad de tweets por fecha
-    count_by_date = df.groupby(['created_date']).size().reset_index(name='count')
-    # Genero un dataframe con los mejores usuarios en cantidad de tweets por fecha
-    top_user_by_date = get_top_user_by_date(df)
-    # Hago un join entre el dataframe count_by_date y top_user_by_date para tener la información en un mismo dataframe, uso created_date como key
-    result = count_by_date.join(top_user_by_date.set_index(["created_date"]),on=["created_date"],how="inner",lsuffix="_x",rsuffix="_y",)
-    # Ordeno por fecha de mayor cantidad de tweets y me quedo con los primeros 10 resultados
-    result = result.sort_values(by=['count'], ascending=False).head(10)
-    # Creo la lista vacia que almacenara el resultado final
-    result_list = []
-    # Recorro cada fila del dataframe result
-    for _, row in result.iterrows():
-        # Convierto la fecha que estaba en string a date
-        str_to_date = datetime.strptime(row['created_date'], "%Y-%m-%d").date()
-        # Agrego la tupla (fecha, username) en la lista a retornar
-        result_list.append((str_to_date, row['username']))
-    # Retorno la lista resultante del paso anterior
-    return result_list
+    if df.empty:
+        return []
+    else:
+        # Convierto en datetime la fecha del tweet
+        df['created_date'] = df['date'].str[:10]
+        # Genero un dataframe con la cantidad de tweets por fecha
+        count_by_date = df.groupby(['created_date']).size().reset_index(name='count')
+        # Genero un dataframe con los mejores usuarios en cantidad de tweets por fecha
+        top_user_by_date = get_top_user_by_date(df)
+        # Hago un join entre el dataframe count_by_date y top_user_by_date para tener la información en un mismo dataframe, uso created_date como key
+        result = count_by_date.join(top_user_by_date.set_index(["created_date"]),on=["created_date"],how="inner",lsuffix="_x",rsuffix="_y",)
+        # Ordeno por fecha de mayor cantidad de tweets y me quedo con los primeros 10 resultados
+        result = result.sort_values(by=['count'], ascending=False).head(10)
+        # Creo la lista vacia que almacenara el resultado final
+        result_list = []
+        # Recorro cada fila del dataframe result
+        for _, row in result.iterrows():
+            # Convierto la fecha que estaba en string a date
+            str_to_date = datetime.strptime(row['created_date'], "%Y-%m-%d").date()
+            # Agrego la tupla (fecha, username) en la lista a retornar
+            result_list.append((str_to_date, row['username']))
+        # Retorno la lista resultante del paso anterior
+        return result_list

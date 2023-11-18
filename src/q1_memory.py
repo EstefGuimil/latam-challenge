@@ -24,17 +24,23 @@ def get_top_user_by_date(df_tweets):
 def q1_memory(file_path: str) -> List[Tuple[datetime.date, str]]:
     # Leo el archivo json que se encuentra en la ruta compartida
     df_tweets = aux_fun.read_json_file_spark(file_path)
-    # Sumo una nueva columna que convierte en date el valor string allmacenado en la columna date
-    df_tweets_new = df_tweets.withColumn("created_date", to_date(substring(df_tweets.date, 1,10),"yyyy-MM-dd"))
-    # Genero un dataframe con la cantidad de tweets por fecha
-    count_by_date = df_tweets_new.groupBy("created_date").count()
-    # Genero un dataframe con los mejores usuarios en cantidad de tweets por fecha
-    top_user_by_date = get_top_user_by_date(df_tweets_new)
-    # Cruzo la informacion en count_by_date con la iformacion en top_user_by_date para obtener el resultado utilizando como key la fecha
-    result = count_by_date.join(top_user_by_date, count_by_date.created_date == top_user_by_date.created_date, "inner")
-    # Ordeno por fecha de mayor cantidad de tweets y me quedo con los primeros 10 resultados
-    result =  result.orderBy(col("count").desc()).limit(10)
-    # Convierto el dataframe en una lista de tuplas (fecha, username)
-    result_list = result.rdd.map(lambda x: (x[0], x[3])).collect()
-    # Retorno la lista resultante del paso anterior
-    return(result_list)
+    if (df_tweets.count() == 0):
+        return []
+    else:
+        try:
+            # Sumo una nueva columna que convierte en date el valor string allmacenado en la columna date
+            df_tweets_new = df_tweets.withColumn("created_date", to_date(substring(df_tweets.date, 1,10),"yyyy-MM-dd"))
+            # Genero un dataframe con la cantidad de tweets por fecha
+            count_by_date = df_tweets_new.groupBy("created_date").count()
+            # Genero un dataframe con los mejores usuarios en cantidad de tweets por fecha
+            top_user_by_date = get_top_user_by_date(df_tweets_new)
+            # Cruzo la informacion en count_by_date con la iformacion en top_user_by_date para obtener el resultado utilizando como key la fecha
+            result = count_by_date.join(top_user_by_date, count_by_date.created_date == top_user_by_date.created_date, "inner")
+            # Ordeno por fecha de mayor cantidad de tweets y me quedo con los primeros 10 resultados
+            result =  result.orderBy(col("count").desc()).limit(10)
+            # Convierto el dataframe en una lista de tuplas (fecha, username)
+            result_list = result.rdd.map(lambda x: (x[0], x[3])).collect()
+            # Retorno la lista resultante del paso anterior
+            return(result_list)
+        except AttributeError:
+            return []  # Casos en que no existe en el archivo que leí ningun registro con date
